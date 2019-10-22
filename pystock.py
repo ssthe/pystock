@@ -1,53 +1,52 @@
 import pandas as pd
 import tkinter as tk
 
-class pystock:
+#######################
+# COMPUTATIAONAL PART #
+#######################
 
-    #######################
-    # COMPUTATIAONAL PART #
-    #######################
-
-    # helper method for function sub
-    # TODO: Add zero division detection and handling
-    def sub_eval(self, map, eqa):
-        return eval(eqa, map)
+# helper method for function sub
+# TODO: Add zero division detection and handling
+def sub_eval(map, eqa):
+    return eval(eqa, map)
     
-    # variable substitution and eqation evaluation
-    def sub(self, eqa, var_df):
-        return var_df.apply(sub_eval, axis = 1, args = eqa)
+# variable substitution and eqation evaluation
+def sub(eqa, var_df):
+    return var_df.apply(sub_eval, axis = 1, args = eqa)
 
-    # validate equation 
-    def eqation_validate(self, eqa, vars):
-        try:
-            eval(eqa, dict(vars, [1]*len(vars)))
-        except ZeroDivisionError:
-            pass
-        except:
-            return False
-        return True
-
-    #################
-    # DATA I/O PART #
-    #################
-
-    # initialize data
-    def data_load(self):
+# validate equation 
+def eqation_validate(eqa, vars):
+    try:
+        eval(eqa, dict(vars, [1]*len(vars)))
+    except ZeroDivisionError:
         pass
+    except:
+        return False
+    return True
 
-    ############
-    # GUI PART #
-    ############
+#################
+# DATA I/O PART #
+#################
 
-    # initialize gui
-    def gui_load(self):
-        self.gui = tk.Tk()
+# initialize data
+def data_load():
+    pass
 
-    ###############
-    # DRIVER PART #
-    ###############
+############
+# GUI PART #
+############
 
-    # Driver code
-    if __name__ == "__main__":
-        data_load()
-        gui_load()
-        gui.mainloop()
+# initialize gui
+def gui_load():
+    gui = tk.Tk()
+    return gui
+
+###############
+# DRIVER PART #
+###############
+
+# Driver code
+if __name__ == "__main__":
+    data_load()
+    gui = gui_load()
+    gui.mainloop()

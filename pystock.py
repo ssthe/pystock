@@ -1,6 +1,17 @@
 import pandas as pd
 import baostock as bs
 import tkinter as tk
+import inspect as sp
+import pathlib as pt
+
+
+###############
+# CONFIG PART #
+###############
+floc = "data/"
+floc_vars = floc + "vars.csv"
+floc_funcs = floc + "funcs.csv"
+
 
 #######################
 # COMPUTATIAONAL PART #
@@ -25,42 +36,38 @@ def eqation_validate(eqa, vars):
 		return False
 	return True
 
+
 #################
 # DATA I/O PART #
 #################
 
 # initialize data
 def data_load():
-	pass
+	pt.Path(floc).mkdir(exist_ok=True)
+	var_list = read_persist(floc_vars)
+	func_list = read_persist(floc_funcs)
+	
+# create if not exisit
+def read_persist(file_loc):
+	if pt.Path(file_loc).is_file():
+		result = pd.read_csv(file_loc)
+	else:
+		result = pd.DataFrame()
+		result.to_csv(floc_vars)
+	return result
 
 # retrieve data from baostock
 def get_stock_data(**kwargs):
-	lg = bs.login()
-	# 显示登陆返回信息
-	print('login respond error_code:'+lg.error_code)
-	print('login respond  error_msg:'+lg.error_msg)
+	pass
 
-	#### 获取历史K线数据 ####
-	# 详细指标参数，参见“历史行情指标参数”章节
-	rs = bs.query_history_k_data_plus("sh.600000",
-		"date,code,open,high,low,close,preclose,volume,amount,adjustflag,turn,tradestatus,pctChg,peTTM,pbMRQ,psTTM,pcfNcfTTM,isST",
-		start_date='2017-06-01', end_date='2017-12-31', 
-		frequency="d", adjustflag="3") #frequency="d"取日k线，adjustflag="3"默认不复权
-	print('query_history_k_data_plus respond error_code:'+rs.error_code)
-	print('query_history_k_data_plus respond  error_msg:'+rs.error_msg)
-
-	#### 打印结果集 ####
-	data_list = []
-	while (rs.error_code == '0') & rs.next():
-		# 获取一条记录，将记录合并在一起
-		data_list.append(rs.get_row_data())
-	result = pd.DataFrame(data_list, columns=rs.fields)
-	#### 结果集输出到csv文件 ####
-	result.to_csv("D:/history_k_data.csv", encoding="gbk", index=False)
-	print(result)
-
-	#### 登出系统 ####
-	bs.logout()
+# return a dict of <function name, function>
+def get_all_func():
+	result = dict(sp.getmembers(bs, sp.isfunction))
+	if 'login' in result:
+		del result['login']
+	if 'logout' in result:
+		del result['logout']
+	return result
 
 
 ############
@@ -71,6 +78,7 @@ def get_stock_data(**kwargs):
 def gui_load():
 	gui = tk.Tk()
 	return gui
+
 
 ###############
 # DRIVER PART #

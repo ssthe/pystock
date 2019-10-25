@@ -1,16 +1,23 @@
-import pandas as pd
-import baostock as bs
-import tkinter as tk
 import inspect as sp
 import pathlib as pt
+import tkinter as tk
+
+import baostock as bs
+import pandas as pd
 
 
 ###############
 # CONFIG PART #
 ###############
+
+# path to persist data
 floc = "data/"
 floc_vars = floc + "vars.csv"
 floc_funcs = floc + "funcs.csv"
+
+# globals
+var_list = None
+func_list = None
 
 
 #######################
@@ -26,7 +33,7 @@ def sub_eval(map, eqa):
 def sub(eqa, var_df):
 	return var_df.apply(sub_eval, axis = 1, args = eqa)
 
-# validate equation 
+# validate equation
 def eqation_validate(eqa, vars):
 	try:
 		eval(eqa, dict(vars, [1]*len(vars)))
@@ -43,11 +50,36 @@ def eqation_validate(eqa, vars):
 
 # initialize data
 def data_load():
-	pt.Path(floc).mkdir(exist_ok=True)
+	pt.Path(floc).mkdir(exist_ok = True)
+	global var_list
+	global func_list
 	var_list = read_persist(floc_vars)
 	func_list = read_persist(floc_funcs)
+
+# add new variable
+def add_var(name, func_and_args, csv_loc):
+	var_list.append(pd.DataFrame([name, str(func_and_args), csv_loc], 
+		columns=["name", "func-and-args", "csv-location"]), ignore_index=True)
+
+# add new function
+def add_func(name, func):
+	func_list.append(pd.DataFrame([name, str(func)], columns=["name", "value"],
+		), ignore_index=True)
+
+# write to disk
+def write_all():
+	write_var()
+	write_func()
+
+# write variables
+def write_var():
+	var_list.to_csv(floc_vars)
+
+# write function
+def write_func():
+	func_list.to_csv(floc_funcs)
 	
-# create if not exisit
+# create if not exist
 def read_persist(file_loc):
 	if pt.Path(file_loc).is_file():
 		result = pd.read_csv(file_loc)

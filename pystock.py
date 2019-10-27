@@ -62,9 +62,9 @@ def add_var(name, func_and_args, csv_loc):
 		columns=["name", "func-and-args", "csv-location"]), ignore_index=True)
 
 # add new function
-def add_func(name, func):
-	func_list.append(pd.DataFrame([name, str(func)], columns=["name", "value"],
-		), ignore_index=True)
+def add_func(name, func, var_map):
+	func_list.append(pd.DataFrame([name, str(func), str(var_map)], 
+		columns=["name", "value", "var-map"]), ignore_index=True)
 
 # write to disk
 def write_all():
@@ -89,8 +89,8 @@ def read_persist(file_loc):
 	return result
 
 # retrieve data from baostock
-def get_stock_data(**kwargs):
-	pass
+def get_stock_data(func, args, kwargs):
+	return func(*args, **kwargs)
 
 # return a dict of <function name, function>
 def get_all_func():
@@ -101,6 +101,9 @@ def get_all_func():
 		del result['logout']
 	return result
 
+# return a tuple of arg names and kwarg names (args, kwargs)
+def get_all_args(func):
+	return sp.signature(func).parameters
 
 ############
 # GUI PART #
@@ -109,6 +112,7 @@ def get_all_func():
 # initialize gui
 def gui_load():
 	gui = tk.Tk()
+	bao_list = get_all_func()
 	return gui
 
 

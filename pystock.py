@@ -1,9 +1,11 @@
 import inspect as sp
 import pathlib as pt
-import tkinter as tk
 
 import baostock as bs
 import pandas as pd
+
+from tkinter import Tk
+from tkinter import ttk
 
 
 ###############
@@ -23,15 +25,16 @@ func_list = None
 #######################
 # COMPUTATIAONAL PART #
 #######################
-
-# helper method for function sub
-# TODO: Add zero division detection and handling
-def sub_eval(map, eqa):
-	return eval(eqa, map)
 	
 # variable substitution and eqation evaluation
 def sub(eqa, var_df):
-	return var_df.apply(sub_eval, axis = 1, args = eqa)
+
+	# helper method for function sub
+	# TODO: Add zero division detection and handling
+	def sub_helper(map, eqa):
+		return eval(eqa, map)
+
+	return var_df.apply(sub_helper, axis = 1, args = eqa)
 
 # validate equation
 def eqation_validate(eqa, vars):
@@ -111,9 +114,35 @@ def get_all_args(func):
 
 # initialize gui
 def gui_load():
-	gui = tk.Tk()
+	gui = Tk()
 	bao_list = get_all_func()
 	return gui
+
+# variable window
+def var_frame(master):
+	global var_list
+	f = ttk.Frame(master)
+	lf = list_frame(f, var_list)
+	lf.pack()
+	return f
+
+# function window
+def func_frame(master):
+	global func_list
+	f = ttk.Frame(master)
+	lf = list_frame(f, func_list)
+	lf.pack()
+	return f
+
+# universal list frame
+def list_frame(master, df):
+	tree = ttk.Treeview(master, columns=df.columns.values)
+	for col in df.columns.values:
+		tree.column(col, width=100)
+		tree.heading(col, text=col)
+	for row in len(df):
+		tree.insert('', row, values=(df.iloc[row].tolist))
+	return tree
 
 
 ###############

@@ -70,16 +70,16 @@ def data_load():
     var_list = read_persist(floc_vars, var_heads)
     func_list = read_persist(floc_funcs, func_heads)
     data_list = get_all_func()
-    return (var_list, func_list)
+    #return (var_list, func_list)
 
 # add new variable
 def add_var(name, func, args):
-    var_list.append(pd.DataFrame([name, str(func), str(args)],
+    var_list.append(pd.DataFrame([[name, str(func), str(args)]],
                         columns=var_heads), ignore_index=True)
 
 # add new function
 def add_func(name, func):
-    func_list.append(pd.DataFrame([name, str(func)],
+    func_list.append(pd.DataFrame([[name, str(func)]],
                         columns=func_heads), ignore_index=True)
 
 # write to disk
@@ -165,9 +165,9 @@ def var_frame(master):
     f = ttk.Frame(master)
     lf = list_frame(f, var_list)
     lf.pack()
-    cb = ttk.Combobox(f, values=data_list.keys())
+    cb = ttk.Combobox(f, values=list(data_list.keys()))
     cb.pack()
-    b = ttk.Button(f, text="add", command=lambda: pop_add(data_list[cb.get()]))
+    b = ttk.Button(f, text="add", command=lambda: pop_add(data_list[cb.get()], lf))
     b.pack()
     return f
 
@@ -177,7 +177,7 @@ def func_frame(master):
     f = ttk.Frame(master)
     lf = list_frame(f, func_list)
     lf.pack()
-    b = ttk.Button(f, text="add", command=lambda: pop_add(["name", "value"]))
+    b = ttk.Button(f, text="add", command=lambda: pop_add(func_heads, lf))
     b.pack()
     return f
 
@@ -207,13 +207,13 @@ def pop_graph(name, df):
     canvas.get_tk_widget().grid(row=0, column=0)
 
 # calls a popup window for adding var/func
-def pop_add(val):
+def pop_add(val, tree):
     func = None
     if callable(val):
         func = val
-        args = get_all_args(func)
+        args = list(get_all_args(func))
     else:
-        args = val
+        args = list(val)
 
     pop = Toplevel()
     f = ttk.Frame(pop)
@@ -228,12 +228,15 @@ def pop_add(val):
         entry_list.append(e)
     
     def submit():
+        result = [entry.get() for entry in entry_list]
         if func:
-            add_var(entry_list[0].get(), func, [entry.get() for entry in entry_list[1:]])
+            add_var(result[0], func, result[1:])
+            tree.insert('', len(var_list), values=[result[0], func.__name__, str(result[1:])])
         else:
-            add_func(entry_list[0].get(), entry_list[1].get())
+            add_func(result[0], result[1])
+            tree.insert('', len(func_list), values=result)
         # TODO: checking if add var/func arguments valid
-        pop.quit
+        pop.destroy()
 
     b = ttk.Button(f, text="submit", command=submit)
     b.pack()

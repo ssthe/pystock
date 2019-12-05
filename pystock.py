@@ -1,5 +1,6 @@
 import inspect as sp
 import pathlib as pt
+import json
 
 import baostock as bs
 import pandas as pd
@@ -7,6 +8,7 @@ import pandas as pd
 from tkinter import Tk
 from tkinter import ttk
 from tkinter import Toplevel
+from tkinter import messagebox
 
 import matplotlib as mp
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -19,15 +21,16 @@ from matplotlib.figure import Figure
 
 # path to persist data
 floc = "data/"
+floc_vars = floc + "vars.json"
+floc_funcs = floc + "funcs.json"
 floc_data = floc + "vals/"
-floc_vars = floc + "vars.csv"
-floc_funcs = floc + "funcs.csv"
 
 # globals
+# list of user variables
 var_list = None
-var_heads = ["name", "query", "args"]
+# list of user functions
 func_list = None
-func_heads = ["name", "value"]
+# list of data getting fucntions
 data_list = None
 
 
@@ -67,20 +70,10 @@ def data_load():
     global var_list
     global func_list
     global data_list
-    var_list = read_persist(floc_vars, var_heads)
-    func_list = read_persist(floc_funcs, func_heads)
+    var_list = read_persist(floc_vars)
+    func_list = read_persist(floc_funcs)
     data_list = get_all_func()
     #return (var_list, func_list)
-
-# add new variable
-def add_var(name, func, args):
-    var_list.append(pd.DataFrame([[name, str(func), str(args)]],
-                        columns=var_heads), ignore_index=True)
-
-# add new function
-def add_func(name, func):
-    func_list.append(pd.DataFrame([[name, str(func)]],
-                        columns=func_heads), ignore_index=True)
 
 # write to disk
 def write_all():
@@ -89,41 +82,21 @@ def write_all():
 
 # write variables
 def write_var():
-    var_list.to_csv(floc_vars)
-
-# write a specific var value
-def write_var_df(var_name, df):
-    df.to_csv(floc_data+var_name+".csv")
-
-# read a group of var value
-def read_Vars(var_names):
-    results=[]
-    
-    def helper(map):
-        if map['name'] in var_names:
-            p = floc_data+map['name']+".csv"
-            if pt.Path(p).is_file():
-                results.append(pd.read_csv(p))
-            else:
-                df = get_stock_data(map['func'], eval(map['args']))
-                df.to_csv(p)
-                results.append(df)
-        return map
-    
-    var_list.apply(helper, axis=1)
-    return results
+    with open (floc_vars, 'w') as fv:
+        json.dump(var_list, fv)
 
 # write function
 def write_func():
-    func_list.to_csv(floc_funcs)
+    with open (floc_funcs, 'w') as ff:
+        json.dump(func_list, ff)
 
 # create if not exist
-def read_persist(file_loc, heads):
+def read_persist(file_loc):
     if pt.Path(file_loc).is_file():
-        result = pd.read_csv(file_loc)
+        with open (file_loc, 'r') as fl:
+            result = json.load(fl)
     else:
-        result = pd.DataFrame(columns=heads)
-        result.to_csv(file_loc, index=False)
+        result = {}
     return result
 
 # retrieve data from baostock
@@ -156,6 +129,12 @@ def gui_load():
     nt.add(vf, text="variables")
     ff = func_frame(nt)
     nt.add(ff, text="functions")
+    bsave = ttk.Button(gui, text="save", command=write_all)
+    bsave.grid(row=1, column=0)
+
+    gui.rowconfigure(0, weight=1)
+    gui.columnconfigure(0, weight=1)
+
     return gui
 
 # variable window
@@ -163,32 +142,39 @@ def var_frame(master):
     global var_list
     global data_list
     f = ttk.Frame(master)
-    lf = list_frame(f, var_list)
-    lf.pack()
+    lf = list_frame(f, ['name', 'val'], [[name, var_list[name]]for name in var_list.keys()])
+    lf.grid(row=0, column=0, columnspan=2, sticky='nwes')
     cb = ttk.Combobox(f, values=list(data_list.keys()))
-    cb.pack()
+    cb.grid(row=1, column=0)
     b = ttk.Button(f, text="add", command=lambda: pop_add(data_list[cb.get()], lf))
-    b.pack()
+    b.grid(row=1, column=1)
+    d = ttk.Button(f, text="delete", command=None)
+    d.grid(row=2, column=0)
+
+    for i in range(2):
+        f.columnconfigure(i, weight=1)
+    f.rowconfigure(0, weight=1)
+
     return f
 
 # function window
 def func_frame(master):
     global func_list
     f = ttk.Frame(master)
-    lf = list_frame(f, func_list)
+    lf = list_frame(f, ['name', 'val'], [[name, var_list[name]]for name in func_list.keys()])
     lf.pack()
-    b = ttk.Button(f, text="add", command=lambda: pop_add(func_heads, lf))
+    b = ttk.Button(f, text="add", command=lambda: pop_add(['name', 'val'], lf))
     b.pack()
     return f
 
 # universal list frame
-def list_frame(master, df):
-    tree = ttk.Treeview(master, columns=tuple(df.columns.values), show='headings')
-    for col in df.columns.values:
-        tree.column(col, width=100)
-        tree.heading(col, text=col)
-    for row in range(len(df)):
-        tree.insert('', row, values=(df.iloc[row].tolist))
+def list_frame(master, heads, lists):
+    tree = ttk.Treeview(master, columns=heads, show='headings')
+    for h in heads:
+        tree.column(h, width=100)
+        tree.heading(h, text=h)
+    for l in range(len(lists)):
+        tree.insert('', l, values=lists[l])
     return tree
 
 # calls a popup window for a plot
@@ -208,10 +194,11 @@ def pop_graph(name, df):
 
 # calls a popup window for adding var/func
 def pop_add(val, tree):
-    func = None
+    data = None
     if callable(val):
-        func = val
-        args = list(get_all_args(func))
+        data = val
+        args = list(get_all_args(data))
+        args.insert(0, 'name')
     else:
         args = list(val)
 
@@ -219,7 +206,6 @@ def pop_add(val, tree):
     f = ttk.Frame(pop)
     f.grid(row=0, column=0, sticky='nwes', padx=3, pady=3)
     entry_list = []
-    args.insert(0, 'name')
     for arg in args:
         l = ttk.Label(f, text=arg)
         l.pack()
@@ -229,11 +215,13 @@ def pop_add(val, tree):
     
     def submit():
         result = [entry.get() for entry in entry_list]
-        if func:
-            add_var(result[0], func, result[1:])
-            tree.insert('', len(var_list), values=[result[0], func.__name__, str(result[1:])])
+        if pt.Path(floc_data+result[0]+".json").is_file():
+            messagebox.showinfo(title="Message", message="name already exist!")
+        if data:
+            var_list[result[0]] = [data.__name__] + result[1:]
+            tree.insert('', len(var_list), values=[result[0], [data.__name__]+result[1:]])
         else:
-            add_func(result[0], result[1])
+            func_list[result[0]] = result[1:]
             tree.insert('', len(func_list), values=result)
         # TODO: checking if add var/func arguments valid
         pop.destroy()

@@ -101,7 +101,15 @@ def read_persist(file_loc):
 
 # retrieve data from baostock
 def get_stock_data(func, args):
-    return func(*args)
+    bs.login()
+    rs = func(*args)
+    data_list = []
+    while (rs.error_code == '0') and rs.next():
+        data_list.append(rs.get_row_data())
+    result = pd.DataFrame(data_list, columns=rs.fields)
+    #print(result)
+    bs.logout()
+    return result
 
 # return a dict of <function name, function>
 def get_all_func():

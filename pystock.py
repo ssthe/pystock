@@ -148,8 +148,19 @@ def var_frame(master):
     cb.grid(row=1, column=0)
     b = ttk.Button(f, text="add", command=lambda: pop_add(data_list[cb.get()], lf))
     b.grid(row=1, column=1)
-    d = ttk.Button(f, text="delete", command=None)
+    
+    def delete():
+        del var_list[lf.item(lf.focus())['values'][0]]
+        lf.delete(lf.focus())
+    d = ttk.Button(f, text="delete", command=delete)
     d.grid(row=2, column=0)
+
+    def get_data():
+        name = lf.item(lf.focus())['values'][0]
+        df = get_stock_data(data_list[var_list[name][0]], var_list[name][1:])
+        df.to_json(floc_data+name+".json")            
+    c = ttk.Button(f, text="get data!", command=get_data)
+    c.grid(row=2, column=1)
 
     for i in range(2):
         f.columnconfigure(i, weight=1)

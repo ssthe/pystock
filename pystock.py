@@ -38,16 +38,6 @@ data_list = None
 # COMPUTATIAONAL PART #
 #######################
 
-# variable substitution and eqation evaluation
-def sub(eqa, var_df):
-
-    # helper method for function sub
-    # TODO: Add zero division detection and handling
-    def sub_helper(map, eqa):
-        return eval(eqa, map)
-
-    return var_df.apply(sub_helper, axis=1, args=eqa)
-
 # validate equation
 def eqation_validate(eqa, vars):
     try:
@@ -166,7 +156,8 @@ def var_frame(master):
     def get_data():
         name = lf.item(lf.focus())['values'][0]
         df = get_stock_data(data_list[var_list[name][0]], var_list[name][1:])
-        df.to_json(floc_data+name+".json")            
+        df.to_json(floc_data+name+".json")
+        var_loaded[name] = df
     c = ttk.Button(f, text="get data!", command=get_data)
     c.grid(row=2, column=1)
 
@@ -190,8 +181,12 @@ def func_frame(master):
         lf.delete(lf.focus())
     d = ttk.Button(f, text="delete", command=delete)
     d.grid(row=1, column=1)
-        
-    ev = ttk.Button(f, text="eval", command=None)
+
+    def valuate():
+        values = lf.item(lf.focus())['values']
+        result = eval(values[1])
+        pop_result(values[0], result)
+    ev = ttk.Button(f, text="eval", command=valuate)
     ev.grid(row=1, column=2)
 
     for i in range(3):
@@ -209,6 +204,24 @@ def list_frame(master, heads, lists):
     for l in range(len(lists)):
         tree.insert('', l, values=lists[l])
     return tree
+
+def pop_result(name, result):
+    pop = Toplevel()
+    if isinstance(result, pd.DataFrame):
+        lf = list_frame(pop, result.columns, result.tolist())
+    elif isinstance(result, list):
+        lf = list_frame(pop, ['list'], result)
+        result = pd.DataFrame(result)
+    else:
+        result = [result]
+        lf = list_frame(pop, ['val'], result)
+        result = pd.DataFrame(result)
+    lf.grid(row=0, column=0, sticky='nwes')
+    g = ttk.Button(pop, text="graph it!", command=lambda: pop_graph(name, result))
+    g.grid(row=1, column=0)
+
+    pop.columnconfigure(0, weight=1)
+    pop.rowconfigure(0, weight=1)
 
 # calls a popup window for a plot
 def pop_graph(name, df):
@@ -248,8 +261,9 @@ def pop_add(val, tree):
     
     def submit():
         result = [entry.get() for entry in entry_list]
-        if pt.Path(floc_data+result[0]+".json").is_file():
-            messagebox.showinfo(title="Message", message="name already exist!")
+        if result[0] in var_list or func_list:
+            messagebox.showinfo(title="Message", message="Failed to submit, name already exist!")
+            return
         if data:
             var_list[result[0]] = [data.__name__] + result[1:]
             tree.insert('', len(var_list), values=[result[0], [data.__name__]+result[1:]])

@@ -180,10 +180,24 @@ def var_frame(master):
 def func_frame(master):
     global func_list
     f = ttk.Frame(master)
-    lf = list_frame(f, ['name', 'val'], [[name, var_list[name]]for name in func_list.keys()])
-    lf.pack()
+    lf = list_frame(f, ['name', 'val'], [[name, func_list[name]]for name in func_list.keys()])
+    lf.grid(row=0, column=0, columnspan=3, sticky='nwes')
     b = ttk.Button(f, text="add", command=lambda: pop_add(['name', 'val'], lf))
-    b.pack()
+    b.grid(row=1, column=0)
+
+    def delete():
+        del func_list[lf.item(lf.focus())['values'][0]]
+        lf.delete(lf.focus())
+    d = ttk.Button(f, text="delete", command=delete)
+    d.grid(row=1, column=1)
+        
+    ev = ttk.Button(f, text="eval", command=None)
+    ev.grid(row=1, column=2)
+
+    for i in range(3):
+        f.columnconfigure(i, weight=1)
+    f.rowconfigure(0, weight=1)
+
     return f
 
 # universal list frame

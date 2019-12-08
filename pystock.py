@@ -127,7 +127,7 @@ def get_all_json():
     result = {}
     for name in var_list.keys():
         if pt.Path(floc_data+name+".json").is_file():
-            result[name] = pd.read_json(floc_data+name+".json")
+            result[name] = pd.read_json(floc_data+name+".json").sort_index()
     return result
 
 ############

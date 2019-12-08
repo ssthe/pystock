@@ -32,6 +32,8 @@ var_list = None
 func_list = None
 # list of data getting fucntions
 data_list = None
+# list of loaded data in json
+json_list = None
 
 
 #######################
@@ -60,9 +62,11 @@ def data_load():
     global var_list
     global func_list
     global data_list
+    global json_list
     var_list = read_persist(floc_vars)
     func_list = read_persist(floc_funcs)
     data_list = get_all_func()
+    json_list = get_all_json()
     #return (var_list, func_list)
 
 # write to disk
@@ -85,6 +89,9 @@ def read_persist(file_loc):
     if pt.Path(file_loc).is_file():
         with open (file_loc, 'r') as fl:
             result = json.load(fl)
+            for key in result.keys():
+                if isinstance(result[key], list) and len(result[key]) == 1:
+                    result[key] = result[key][0]
     else:
         result = {}
     return result
@@ -114,6 +121,15 @@ def get_all_func():
 def get_all_args(func):
     return sp.signature(func).parameters
 
+# read all jsons infered by var list
+def get_all_json():
+    global var_list
+    result = {}
+    for name in var_list.keys():
+        if pt.Path(floc_data+name+".json").is_file():
+            result[name] = pd.read_json(floc_data+name+".json")
+    return result
+
 ############
 # GUI PART #
 ############
@@ -139,6 +155,7 @@ def gui_load():
 def var_frame(master):
     global var_list
     global data_list
+    global json_list
     f = ttk.Frame(master)
     lf = list_frame(f, ['name', 'val'], [[name, var_list[name]]for name in var_list.keys()])
     lf.grid(row=0, column=0, columnspan=2, sticky='nwes')
@@ -157,7 +174,7 @@ def var_frame(master):
         name = lf.item(lf.focus())['values'][0]
         df = get_stock_data(data_list[var_list[name][0]], var_list[name][1:])
         df.to_json(floc_data+name+".json")
-        var_loaded[name] = df
+        json_list[name] = df
     c = ttk.Button(f, text="get data!", command=get_data)
     c.grid(row=2, column=1)
 
@@ -170,6 +187,7 @@ def var_frame(master):
 # function window
 def func_frame(master):
     global func_list
+    global json_list
     f = ttk.Frame(master)
     lf = list_frame(f, ['name', 'val'], [[name, func_list[name]]for name in func_list.keys()])
     lf.grid(row=0, column=0, columnspan=3, sticky='nwes')
@@ -184,7 +202,7 @@ def func_frame(master):
 
     def valuate():
         values = lf.item(lf.focus())['values']
-        result = eval(values[1])
+        result = eval(values[1], {}, json_list)
         pop_result(values[0], result)
     ev = ttk.Button(f, text="eval", command=valuate)
     ev.grid(row=1, column=2)
@@ -208,7 +226,7 @@ def list_frame(master, heads, lists):
 def pop_result(name, result):
     pop = Toplevel()
     if isinstance(result, pd.DataFrame):
-        lf = list_frame(pop, result.columns, result.tolist())
+        lf = list_frame(pop, result.columns.values.tolist(), result.values.tolist())
     elif isinstance(result, list):
         lf = list_frame(pop, ['list'], result)
         result = pd.DataFrame(result)
@@ -261,7 +279,7 @@ def pop_add(val, tree):
     
     def submit():
         result = [entry.get() for entry in entry_list]
-        if result[0] in var_list or func_list:
+        if result[0] in var_list or result[0] in func_list:
             messagebox.showinfo(title="Message", message="Failed to submit, name already exist!")
             return
         if data:

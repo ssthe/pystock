@@ -5,7 +5,7 @@
 ##### Python version
 This is a project developed under Python 3.8, make sure you runs [Python 3.8](https://www.python.org/downloads/release/python-380/) so that nothing strange would happen.  
 ##### Dependencies
-Besides, you need the following packages:
+Besides, you need the following packages:  
 [pandas](https://pandas.pydata.org/)  
 [baostock](http://baostock.com/)  
 [matplotlib](https://matplotlib.org/)  

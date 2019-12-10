@@ -128,6 +128,9 @@ def get_all_json():
     for name in var_list.keys():
         if pt.Path(floc_data+name+".json").is_file():
             result[name] = pd.read_json(floc_data+name+".json").sort_index()
+    for name in func_list.keys():
+        if pt.Path(floc_data+name+".json").is_file():
+            result[name] = pd.read_json(floc_data+name+".json").sort_index()
     return result
 
 ############
@@ -202,6 +205,8 @@ def func_frame(master):
 
     def valuate():
         values = lf.item(lf.focus())['values']
+        print(values)
+        print(json_list.keys())
         result = eval(values[1], {}, json_list)
         pop_result(values[0], result)
     ev = ttk.Button(f, text="eval", command=valuate)
@@ -224,6 +229,7 @@ def list_frame(master, heads, lists):
     return tree
 
 def pop_result(name, result):
+    global json_list
     pop = Toplevel()
     if isinstance(result, pd.DataFrame):
         lf = list_frame(pop, result.columns.values.tolist(), result.values.tolist())
@@ -234,9 +240,14 @@ def pop_result(name, result):
         result = [result]
         lf = list_frame(pop, ['val'], result)
         result = pd.DataFrame(result)
-    lf.grid(row=0, column=0, sticky='nwes')
+    lf.grid(row=0, column=0, sticky='nwes', columnspan=2)
     g = ttk.Button(pop, text="graph it!", command=lambda: pop_graph(name, result))
-    g.grid(row=1, column=0)
+    g.grid(row=1, column=1)
+    def save_var():
+        result.to_json(floc_data+name+".json")
+        json_list[name] = result
+    sv = ttk.Button(pop, text="save it", command=save_var)
+    sv.grid(row=1, column=0)
 
     pop.columnconfigure(0, weight=1)
     pop.rowconfigure(0, weight=1)

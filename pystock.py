@@ -25,6 +25,9 @@ floc_vars = floc + "vars.json"
 floc_funcs = floc + "funcs.json"
 floc_data = floc + "vals/"
 
+# language setting
+lang = "zhcn"
+
 # globals
 # list of user variables
 var_list = None
@@ -35,20 +38,43 @@ data_list = None
 # list of loaded data in json
 json_list = None
 
+# language
+class zhcn():
+    variables = "变量"
+    functions = "公式"
+    save = "保存"
+    add = "增加"
+    delete = "删除"
+    warnning = "警告"
+    msg_get_data_first = "需要先取得数据"
+    show_data = "展示数据"
+    get_data = "取得数据"
+    valuate = "取值"
+    graph_it = "画图！"
+    save_it = "存为变量"
+    message = "信息"
+    msg_fail_submit = "提交失败，名称已存在"
+    submit = "提交"
 
-#######################
-# COMPUTATIAONAL PART #
-#######################
+class en():
+    variables = "variables"
+    functions = "functions"
+    save = "save"
+    add = "add"
+    delete = "delete"
+    warnning = "Warnning"
+    msg_get_data_first = "Need to get the data first"
+    show_data = "show data"
+    get_data = "get data!"
+    valuate = "eval"
+    graph_it = "graph it!"
+    save_it = "save it"
+    message = "Message"
+    msg_fail_submit = "Failed to submit, name already exist!"
+    submit = "submit"
 
-# validate equation
-def eqation_validate(eqa, vars):
-    try:
-        eval(eqa, dict(vars, [1]*len(vars)))
-    except ZeroDivisionError:
-        pass
-    except:
-        return False
-    return True
+# Change here to change the language
+lang = zhcn
 
 
 #################
@@ -138,14 +164,15 @@ def get_all_json():
 
 # initialize gui
 def gui_load():
+    global lang
     gui = Tk()
     nt = ttk.Notebook(gui)
     nt.grid(row=0, column=0, sticky='nwes', padx=3, pady=3)
     vf = var_frame(nt)
-    nt.add(vf, text="variables")
+    nt.add(vf, text=lang.variables)
     ff = func_frame(nt)
-    nt.add(ff, text="functions")
-    bsave = ttk.Button(gui, text="save", command=write_all)
+    nt.add(ff, text=lang.functions)
+    bsave = ttk.Button(gui, text=lang.save, command=write_all)
     bsave.grid(row=1, column=0)
 
     gui.rowconfigure(0, weight=1)
@@ -158,18 +185,19 @@ def var_frame(master):
     global var_list
     global data_list
     global json_list
+    global lang
     f = ttk.Frame(master)
     lf = list_frame(f, ['name', 'val'], [[name, var_list[name]]for name in var_list.keys()])
     lf.grid(row=0, column=0, columnspan=3, sticky='nwes')
     cb = ttk.Combobox(f, values=list(data_list.keys()))
     cb.grid(row=1, column=0, columnspan=2)
-    b = ttk.Button(f, text="add", command=lambda: pop_add(data_list[cb.get()], lf))
+    b = ttk.Button(f, text=lang.add, command=lambda: pop_add(data_list[cb.get()], lf))
     b.grid(row=1, column=2)
     
     def delete():
         del var_list[lf.item(lf.focus())['values'][0]]
         lf.delete(lf.focus())
-    d = ttk.Button(f, text="delete", command=delete)
+    d = ttk.Button(f, text=lang.delete, command=delete)
     d.grid(row=2, column=0)
 
     def show_data():
@@ -177,8 +205,8 @@ def var_frame(master):
         if name in json_list:
             pop_data(name, json_list[name])
         else:
-            messagebox.showinfo(title="warnning", text="Need to get the data first")
-    sd = ttk.Button(f, text="show data", command=show_data)
+            messagebox.showinfo(title=lang.warnning, text=lang.msg_get_data_first)
+    sd = ttk.Button(f, text=lang.show_data, command=show_data)
     sd.grid(row=2, column=1)
 
     def get_data():
@@ -186,7 +214,7 @@ def var_frame(master):
         df = get_stock_data(data_list[var_list[name][0]], var_list[name][1:])
         df.to_json(floc_data+name+".json")
         json_list[name] = df
-    c = ttk.Button(f, text="get data!", command=get_data)
+    c = ttk.Button(f, text=lang.get_data, command=get_data)
     c.grid(row=2, column=2)
 
     for i in range(3):
@@ -199,23 +227,24 @@ def var_frame(master):
 def func_frame(master):
     global func_list
     global json_list
+    global lang
     f = ttk.Frame(master)
     lf = list_frame(f, ['name', 'val'], [[name, func_list[name]]for name in func_list.keys()])
     lf.grid(row=0, column=0, columnspan=3, sticky='nwes')
-    b = ttk.Button(f, text="add", command=lambda: pop_add(['name', 'val'], lf))
+    b = ttk.Button(f, text=lang.add, command=lambda: pop_add(['name', 'val'], lf))
     b.grid(row=1, column=0)
 
     def delete():
         del func_list[lf.item(lf.focus())['values'][0]]
         lf.delete(lf.focus())
-    d = ttk.Button(f, text="delete", command=delete)
+    d = ttk.Button(f, text=lang.delete, command=delete)
     d.grid(row=1, column=1)
 
     def valuate():
         values = lf.item(lf.focus())['values']
         result = eval(values[1], {}, json_list)
         pop_result(values[0], result)
-    ev = ttk.Button(f, text="eval", command=valuate)
+    ev = ttk.Button(f, text=lang.valuate, command=valuate)
     ev.grid(row=1, column=2)
 
     for i in range(3):
@@ -240,7 +269,7 @@ def pop_data(name, data):
     lf = list_frame(pop, data.columns.values.tolist(), data.values.tolist())
     lf.grid(row=0, column=0, sticky='nwes')
 
-    g = ttk.Button(pop, text="graph it!", command=lambda: pop_graph(name, data))
+    g = ttk.Button(pop, text=lang.graph_it, command=lambda: pop_graph(name, data))
     g.grid(row=1, column=0)
 
     pop.rowconfigure(0, weight=1)
@@ -249,6 +278,7 @@ def pop_data(name, data):
 # show the result of evaluation
 def pop_result(name, result):
     global json_list
+    global lang
     pop = Toplevel()
     if isinstance(result, pd.DataFrame):
         lf = list_frame(pop, result.columns.values.tolist(), result.values.tolist())
@@ -260,12 +290,12 @@ def pop_result(name, result):
         lf = list_frame(pop, ['val'], result)
         result = pd.DataFrame(result)
     lf.grid(row=0, column=0, sticky='nwes', columnspan=2)
-    g = ttk.Button(pop, text="graph it!", command=lambda: pop_graph(name, result))
+    g = ttk.Button(pop, text=lang.graph_it, command=lambda: pop_graph(name, result))
     g.grid(row=1, column=1)
     def save_var():
         result.to_json(floc_data+name+".json")
         json_list[name] = result
-    sv = ttk.Button(pop, text="save it", command=save_var)
+    sv = ttk.Button(pop, text=lang.save_it, command=save_var)
     sv.grid(row=1, column=0)
 
     pop.columnconfigure(0, weight=1)
@@ -310,7 +340,7 @@ def pop_add(val, tree):
     def submit():
         result = [entry.get() for entry in entry_list]
         if result[0] in var_list or result[0] in func_list:
-            messagebox.showinfo(title="Message", message="Failed to submit, name already exist!")
+            messagebox.showinfo(title=lang.message, message=lang.msg_fail_submit)
             return
         if data:
             var_list[result[0]] = [data.__name__] + result[1:]
@@ -321,7 +351,7 @@ def pop_add(val, tree):
         # TODO: checking if add var/func arguments valid
         pop.destroy()
 
-    b = ttk.Button(f, text="submit", command=submit)
+    b = ttk.Button(f, text=lang.submit, command=submit)
     b.pack()
 
 

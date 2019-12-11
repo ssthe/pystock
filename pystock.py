@@ -104,7 +104,6 @@ def get_stock_data(func, args):
     while (rs.error_code == '0') and rs.next():
         data_list.append(rs.get_row_data())
     result = pd.DataFrame(data_list, columns=rs.fields)
-    #print(result)
     bs.logout()
     return result
 
@@ -161,11 +160,11 @@ def var_frame(master):
     global json_list
     f = ttk.Frame(master)
     lf = list_frame(f, ['name', 'val'], [[name, var_list[name]]for name in var_list.keys()])
-    lf.grid(row=0, column=0, columnspan=2, sticky='nwes')
+    lf.grid(row=0, column=0, columnspan=3, sticky='nwes')
     cb = ttk.Combobox(f, values=list(data_list.keys()))
-    cb.grid(row=1, column=0)
+    cb.grid(row=1, column=0, columnspan=2)
     b = ttk.Button(f, text="add", command=lambda: pop_add(data_list[cb.get()], lf))
-    b.grid(row=1, column=1)
+    b.grid(row=1, column=2)
     
     def delete():
         del var_list[lf.item(lf.focus())['values'][0]]
@@ -173,15 +172,24 @@ def var_frame(master):
     d = ttk.Button(f, text="delete", command=delete)
     d.grid(row=2, column=0)
 
+    def show_data():
+        name = lf.item(lf.focus())['values'][0]
+        if name in json_list:
+            pop_data(name, json_list[name])
+        else:
+            messagebox.showinfo(title="warnning", text="Need to get the data first")
+    sd = ttk.Button(f, text="show data", command=show_data)
+    sd.grid(row=2, column=1)
+
     def get_data():
         name = lf.item(lf.focus())['values'][0]
         df = get_stock_data(data_list[var_list[name][0]], var_list[name][1:])
         df.to_json(floc_data+name+".json")
         json_list[name] = df
     c = ttk.Button(f, text="get data!", command=get_data)
-    c.grid(row=2, column=1)
+    c.grid(row=2, column=2)
 
-    for i in range(2):
+    for i in range(3):
         f.columnconfigure(i, weight=1)
     f.rowconfigure(0, weight=1)
 
@@ -205,8 +213,6 @@ def func_frame(master):
 
     def valuate():
         values = lf.item(lf.focus())['values']
-        print(values)
-        print(json_list.keys())
         result = eval(values[1], {}, json_list)
         pop_result(values[0], result)
     ev = ttk.Button(f, text="eval", command=valuate)
@@ -228,6 +234,19 @@ def list_frame(master, heads, lists):
         tree.insert('', l, values=lists[l])
     return tree
 
+# pop only data
+def pop_data(name, data):
+    pop = Toplevel()
+    lf = list_frame(pop, data.columns.values.tolist(), data.values.tolist())
+    lf.grid(row=0, column=0, sticky='nwes')
+
+    g = ttk.Button(pop, text="graph it!", command=lambda: pop_graph(name, data))
+    g.grid(row=1, column=0)
+
+    pop.rowconfigure(0, weight=1)
+    pop.columnconfigure(0, weight=1)
+
+# show the result of evaluation
 def pop_result(name, result):
     global json_list
     pop = Toplevel()

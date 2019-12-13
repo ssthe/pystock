@@ -55,6 +55,7 @@ class zhcn():
     message = "信息"
     msg_fail_submit = "提交失败，名称已存在"
     submit = "提交"
+    x_var = "自变量（不填默认为数组索引）"
 
 class en():
     variables = "variables"
@@ -72,6 +73,7 @@ class en():
     message = "Message"
     msg_fail_submit = "Failed to submit, name already exist!"
     submit = "submit"
+    x_var = "independent variable (Array index if not specified)"
 
 # Change here to change the language
 lang = zhcn
@@ -269,7 +271,7 @@ def pop_data(name, data):
     lf = list_frame(pop, data.columns.values.tolist(), data.values.tolist())
     lf.grid(row=0, column=0, sticky='nwes')
 
-    g = ttk.Button(pop, text=lang.graph_it, command=lambda: pop_graph(name, data))
+    g = ttk.Button(pop, text=lang.graph_it, command=lambda: pop_graph_config(name, data))
     g.grid(row=1, column=0)
 
     pop.rowconfigure(0, weight=1)
@@ -290,7 +292,7 @@ def pop_result(name, result):
         lf = list_frame(pop, ['val'], result)
         result = pd.DataFrame(result)
     lf.grid(row=0, column=0, sticky='nwes', columnspan=2)
-    g = ttk.Button(pop, text=lang.graph_it, command=lambda: pop_graph(name, result))
+    g = ttk.Button(pop, text=lang.graph_it, command=lambda: pop_graph_config(name, result))
     g.grid(row=1, column=1)
     def save_var():
         result.to_json(floc_data+name+".json")
@@ -301,8 +303,25 @@ def pop_result(name, result):
     pop.columnconfigure(0, weight=1)
     pop.rowconfigure(0, weight=1)
 
+# calls a popup window for plot config
+def pop_graph_config(name, df):
+    global lang
+    pop = Toplevel()
+    l = ttk.Label(pop, text=lang.x_var)
+    l.pack()
+    e = ttk.Entry(pop)
+    e.pack()
+    def submit():
+        if e.get():
+            pop_graph(name, df, e.get())
+        else:
+            pop_graph(name, df)
+        pop.destroy()
+    s = ttk.Button(pop, text=lang.submit, command=submit)
+    s.pack()
+    
 # calls a popup window for a plot
-def pop_graph(name, df):
+def pop_graph(name, df, xv='index'):
     pop = Toplevel()
     lf = ttk.LabelFrame(pop, text=name)
     lf.grid(row=0, column=0, sticky='nwes', padx=3, pady=3)
@@ -310,7 +329,9 @@ def pop_graph(name, df):
     fig = Figure(figsize=(5, 4), dpi=100)
     ax = fig.add_subplot(111)
 
-    df.reset_index().plot(x='index', y=df.columns.values, ax=ax)
+    rf = df.reset_index()
+    rf.rename(columns={'index': xv}, inplace=True)
+    rf.plot(x=xv, y=df.columns.values, ax=ax)
 
     canvas = FigureCanvasTkAgg(fig, master=lf)
     canvas.draw()

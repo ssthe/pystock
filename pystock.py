@@ -1,19 +1,13 @@
 import inspect as sp
-import pathlib as pt
 import json
+import pathlib as pt
+from tkinter import Tk, Toplevel, messagebox, ttk
 
 import baostock as bs
-import pandas as pd
-
-from tkinter import Tk
-from tkinter import ttk
-from tkinter import Toplevel
-from tkinter import messagebox
-
 import matplotlib as mp
+import pandas as pd
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-
 
 ###############
 # CONFIG PART #

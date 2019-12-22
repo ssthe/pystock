@@ -1,6 +1,7 @@
 import inspect as sp
 import json
 import pathlib as pt
+import re
 from tkinter import Tk, Toplevel, messagebox, ttk
 
 import baostock as bs
@@ -236,10 +237,15 @@ def func_frame(master):
     d = ttk.Button(f, text=lang.delete, command=delete)
     d.grid(row=1, column=1)
 
+    def parse_names(expression):
+        results = re.split(r"[\+ \- \* \/ \. \( \)]", expression)
+        return [r for r in results if not r.isdigit()]
+
     def valuate():
         values = lf.item(lf.focus())['values']
+        var_names = parse_names(values[1])
         result = eval(values[1], {}, json_list)
-        pop_result(values[0], result)
+        pop_result(values[0], var_names, result)
     ev = ttk.Button(f, text=lang.valuate, command=valuate)
     ev.grid(row=1, column=2)
 
@@ -272,7 +278,7 @@ def pop_data(name, data):
     pop.columnconfigure(0, weight=1)
 
 # show the result of evaluation
-def pop_result(name, result):
+def pop_result(name, var_names, result):
     global json_list
     global lang
     pop = Toplevel()
@@ -285,7 +291,24 @@ def pop_result(name, result):
         result = [result]
         lf = list_frame(pop, ['val'], result)
         result = pd.DataFrame(result)
-    lf.grid(row=0, column=0, sticky='nwes', columnspan=2)
+    if len(var_names) > 0:
+        rf = None
+        for n in var_names:
+            df = json_list[n]
+            rn = {}
+            for cn in df.columns.values.tolist():
+                rn[cn] = n+"."+cn
+            df = df.rename(columns=rn)
+            if rf is None:
+                rf = df
+            else:
+                rf = rf.join(df)
+        print(rf)
+        nlf = list_frame(pop, rf.columns.values.tolist(), rf.values.tolist())
+        nlf.grid(row=0, column=0, sticky='nwes')
+        lf.grid(row=0, column=1, sticky='nwes')
+    else:
+        lf.grid(row=0, column=0, sticky='nwes', columnspan=2)
     g = ttk.Button(pop, text=lang.graph_it, command=lambda: pop_graph_config(name, result))
     g.grid(row=1, column=1)
     def save_var():

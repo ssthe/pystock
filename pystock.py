@@ -6,6 +6,5 @@ from data import data
 # Driver code
 if __name__ == "__main__":
     data = data()
-    master = Tk()
-    master = gui.main_window(master, data)
+    master = gui.Main_window(data)
     master.mainloop()

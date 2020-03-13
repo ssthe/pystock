@@ -48,9 +48,6 @@ class data():
         if pt.Path(file_loc).is_file():
             with open (file_loc, 'r') as f:
                 result = json.load(f)
-                #for key in result.keys():
-                #    if isinstance(result[key], list) and len(result[key]) == 1:
-                #        result[key] = result[key][0]
         else:
             result = {}
         return result
@@ -70,7 +67,7 @@ class data():
             data_list.append(rs.get_row_data())
         result = pd.DataFrame(data_list, columns=rs.fields)
         bs.logout()
-        return result
+        return result.astype(float)
 
     # return a dict of <function name, function>
     def get_all_func(self):

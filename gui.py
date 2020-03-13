@@ -8,20 +8,22 @@ import data
 from lang import lang
 
 
-def main_window(master, data):
-    notebook = ttk.Notebook(master)
-    notebook.grid(row=0, column=0, sticky='nwes', padx=3, pady=3)
-    var_frame = Var_frame(data, master=notebook)
-    notebook.add(var_frame, text=lang.variables)
-    exps_frame = Exps_frame(data, master=notebook)
-    notebook.add(exps_frame, text=lang.functions)
-    save_button = ttk.Button(master, text=lang.save, command=data.write_all)
-    save_button.grid(row=1, column=0)
+# The main window
+class Main_window(Tk):
+    def __init__(self, data):
+        Tk.__init__(self)
 
-    master.rowconfigure(0, weight=1)
-    master.columnconfigure(0, weight=1)
+        notebook = ttk.Notebook(self)
+        notebook.grid(row=0, column=0, sticky='nwes', padx=3, pady=3)
+        var_frame = Var_frame(data, master=notebook)
+        notebook.add(var_frame, text=lang.variables)
+        exps_frame = Exps_frame(data, master=notebook)
+        notebook.add(exps_frame, text=lang.functions)
+        save_button = ttk.Button(self, text=lang.save, command=data.write_all)
+        save_button.grid(row=1, column=0)
 
-    return master
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
 
 
 # construct a table from treeview widget
@@ -179,16 +181,6 @@ class Add_pop(Toplevel):
         else:
             self.submit(results)
             self.destroy()
-        '''
-        if data:
-            var_list[result[0]] = [data.__name__] + result[1:]
-            tree.insert('', len(var_list), values=[result[0], [data.__name__]+result[1:]])
-        else:
-            func_list[result[0]] = result[1:]
-            tree.insert('', len(func_list), values=result)
-        # TODO: checking if add var/func arguments valid
-        self.destroy()
-        '''
 
 
 # calls a popup window for result showing
